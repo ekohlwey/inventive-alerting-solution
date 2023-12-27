@@ -63,7 +63,6 @@ fun Application.configureRuleRoutes(database: Database) {
     }
 }
 
-
 @Serializable
 data class GetRuleResponse(
     val name: String,

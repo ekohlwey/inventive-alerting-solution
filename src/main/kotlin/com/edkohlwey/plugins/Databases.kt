@@ -14,7 +14,11 @@ fun configureDatabases(): Database {
     transaction(database) {
         SchemaUtils.create(Customers)
         SchemaUtils.create(DataSources)
+        SchemaUtils.create(CustomerDatasources)
         SchemaUtils.create(Rules)
+        SchemaUtils.create(Triggers)
+        SchemaUtils.create(TriggerRules)
+        SchemaUtils.create(EmailTriggers)
     }
     return database
 }

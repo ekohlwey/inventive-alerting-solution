@@ -31,6 +31,11 @@ const val DEFAULT_RULE_DATASOURCE = DEFAULT_DATASOURCE_NAME
 const val DEFAULT_RULE_TRIGGER_ON_NEW = true
 const val DEFAULT_RULE_TRIGGER_ON_CHANGED = false
 const val DEFAULT_RULE_TRIGGER_ON_REMOVED = false
+const val DEFAULT_TRIGGER_NAME = "test-trigger"
+const val DEFAULT_TRIGGER_EMAIL = "test-email"
+const val DEFAULT_TRIGGER_DESCRIPTION = "test-description"
+const val DEFAULT_EMAIL_PROMPT = "test-prompt"
+const val DEFAULT_EMAIL_SCHEDULE = "0 13 * * *"
 
 suspend fun HttpClient.createTestRule(
     customerName: String = DEFAULT_CUSTOMER_NAME,
@@ -172,6 +177,66 @@ suspend fun HttpClient.checkForTestCustomer(
     }
 }
 
+suspend fun HttpClient.createTestEmailTrigger(
+    customerName: String = DEFAULT_CUSTOMER_NAME,
+    triggerName: String = DEFAULT_TRIGGER_NAME,
+    triggerEmail: String = DEFAULT_TRIGGER_EMAIL,
+    description: String = DEFAULT_TRIGGER_DESCRIPTION,
+    prompt: String = DEFAULT_EMAIL_PROMPT,
+    schedule: String = DEFAULT_EMAIL_SCHEDULE,
+    rules: List<String> = listOf(DEFAULT_RULE_NAME),
+    expectedStatus: HttpStatusCode = HttpStatusCode.Created
+) {
+    this.post("/customers/${customerName}/triggers") {
+        contentType(ContentType.Application.Json)
+        setBody(
+            CreateTriggerRequest(
+                name = triggerName,
+                description = description,
+                rules = rules,
+                emailTrigger = CreateEmailTriggerRequest(
+                    email = triggerEmail,
+                    prompt = prompt,
+                    schedule = schedule
+                )
+            )
+        )
+    }.apply {
+        assertEquals(expectedStatus, status)
+    }
+}
+
+suspend fun HttpClient.checkForTestTrigger(
+    customerName: String = DEFAULT_CUSTOMER_NAME,
+    triggerName: String = DEFAULT_TRIGGER_NAME,
+    triggerEmail: String = DEFAULT_TRIGGER_EMAIL,
+    description: String = DEFAULT_TRIGGER_DESCRIPTION,
+    rules: List<String> = listOf(DEFAULT_RULE_NAME),
+    prompt: String = DEFAULT_EMAIL_PROMPT,
+    schedule: String = DEFAULT_EMAIL_SCHEDULE,
+    expectedStatus: HttpStatusCode = HttpStatusCode.OK
+) {
+    this.get("/customers/${customerName}/triggers/${triggerName}").apply {
+        assertEquals(expectedStatus, status)
+        if (expectedStatus == HttpStatusCode.OK) {
+            assertEquals(
+                GetTriggerResponse(
+                    name = triggerName,
+                    description = description,
+                    rules = rules,
+                    emailTrigger = GetEmailTriggerResponse(
+                        email = triggerEmail,
+                        prompt = prompt,
+                        schedule = schedule
+                    )
+                ), body(typeInfo<GetTriggerResponse>())
+            )
+        } else {
+            assertEquals("", bodyAsText())
+        }
+    }
+}
+
 fun ApplicationTestBuilder.setupClient(): HttpClient {
     val client = createClient {
         install(ContentNegotiation) {
@@ -183,7 +248,11 @@ fun ApplicationTestBuilder.setupClient(): HttpClient {
 
 fun clearDatabases(database: Database) {
     transaction(database) {
+        EmailTriggers.deleteAll()
+        TriggerRules.deleteAll()
+        Triggers.deleteAll()
         Rules.deleteAll()
+        CustomerDatasources.deleteAll()
         DataSources.deleteAll()
         Customers.deleteAll()
     }
