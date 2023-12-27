@@ -1,11 +1,16 @@
 package com.edkohlwey.plugins
 
 import io.ktor.http.*
+import io.ktor.resources.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
+import org.mapstruct.Mapper
 
 fun Application.configureDatabases() {
     val database = Database.connect(
@@ -14,36 +19,42 @@ fun Application.configureDatabases() {
         driver = "org.h2.Driver",
         password = ""
     )
-    val userService = UserService(database)
+    val customerService = CustomerService(database)
+    val customerMapper: CustomerMapper = CustomerMapperImpl()
     routing {
-        // Create user
-        post("/users") {
-            val user = call.receive<ExposedUser>()
-            val id = userService.create(user)
-            call.respond(HttpStatusCode.Created, id)
+        // Create customer
+        post<CreateCustomerRequest>("/customers") { request ->
+            customerService.create(customerMapper.toModel(request))
+            call.respond(HttpStatusCode.Created)
         }
-        // Read user
-        get("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = userService.read(id)
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user)
+        // Read customer
+        get("/customers/{name}") {
+            val name = call.parameters["name"] ?: throw IllegalArgumentException("Must specify name")
+            val customer = customerService.read(name)
+            if (customer != null) {
+                call.respond(HttpStatusCode.OK, customerMapper.toGetDto(customer))
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }
         }
-        // Update user
-        put("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = call.receive<ExposedUser>()
-            userService.update(id, user)
-            call.respond(HttpStatusCode.OK)
-        }
-        // Delete user
-        delete("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            userService.delete(id)
+        // Delete customer
+        delete("/customers/{name}") {
+            val name = call.parameters["name"] ?: throw IllegalArgumentException("Invalid name")
+            customerService.delete(name)
             call.respond(HttpStatusCode.OK)
         }
     }
+}
+
+
+@Serializable
+data class GetCustomerResponse(val name: String)
+
+@Serializable
+data class CreateCustomerRequest(val name: String)
+
+@Mapper
+interface CustomerMapper {
+    fun toModel(customer: CreateCustomerRequest): Customer
+    fun toGetDto(customer: Customer): GetCustomerResponse
 }

@@ -1,6 +1,7 @@
 package com.edkohlwey
 
-import com.edkohlwey.plugins.*
+import com.edkohlwey.plugins.configureDatabases
+import com.edkohlwey.plugins.configureSerialization
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -13,5 +14,4 @@ fun main() {
 fun Application.module() {
     configureSerialization()
     configureDatabases()
-    configureRouting()
 }
