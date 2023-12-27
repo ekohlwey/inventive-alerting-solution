@@ -1,10 +1,19 @@
 package com.edkohlwey.plugins
 
+<<<<<<< HEAD
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+=======
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import kotlinx.serialization.Serializable
+import kotlinx.coroutines.Dispatchers
+import org.jetbrains.exposed.sql.*
+>>>>>>> 34f4ca1 (Add an initial customer entity and a test that can verify database)
 
 @Serializable
 data class Customer(val name: String)
