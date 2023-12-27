@@ -4,6 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -39,3 +40,10 @@ fun Application.configureCustomerRoutes(database: Database) {
         }
     }
 }
+
+
+@Serializable
+data class GetCustomerResponse(val name: String)
+
+@Serializable
+data class CreateCustomerRequest(val name: String)
