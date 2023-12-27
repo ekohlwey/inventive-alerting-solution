@@ -4,6 +4,8 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
 
 
 object DataSources : IntIdTable() {
@@ -15,7 +17,15 @@ object DataSources : IntIdTable() {
 }
 
 class DataSource(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<DataSource>(DataSources)
+    companion object : IntEntityClass<DataSource>(DataSources) {
+        fun findDataSourceByCustomerAndName(customerName: String, datasourceName: String): DataSource? {
+            val datasourceRow = Customers.innerJoin(DataSources)
+                .select { Customers.name eq customerName and (DataSources.name eq datasourceName) }
+                .firstOrNull()
+                ?: return null
+            return DataSource.wrapRow(datasourceRow)
+        }
+    }
 
     var name by DataSources.name
     var url by DataSources.url

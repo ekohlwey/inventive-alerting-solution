@@ -7,18 +7,8 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
-fun Transaction.findDataSourceByCustomerAndName(customerName: String, datasourceName: String): DataSource? {
-    val datasourceRow = Customers.innerJoin(DataSources)
-        .select { Customers.name eq customerName and (DataSources.name eq datasourceName) }
-        .firstOrNull()
-        ?: return null
-    return DataSource.wrapRow(datasourceRow)
-}
 
 fun Application.configureDatasourceRoutes(database: Database) {
     routing {
@@ -45,7 +35,7 @@ fun Application.configureDatasourceRoutes(database: Database) {
             val datasourceName =
                 call.parameters["datasource_name"] ?: throw IllegalArgumentException("Must specify datasource name")
             val response = transaction(database) {
-                val datasource = findDataSourceByCustomerAndName(customerName, datasourceName)
+                val datasource = DataSource.findDataSourceByCustomerAndName(customerName, datasourceName)
                     ?: return@transaction HttpStatusCode.NotFound
                 datasource.apply {
                     url = request.url
@@ -62,7 +52,7 @@ fun Application.configureDatasourceRoutes(database: Database) {
             val datasourceName =
                 call.parameters["datasource_name"] ?: throw IllegalArgumentException("Must specify datasource name")
             val (response, value) = transaction(database) {
-                val datasource = findDataSourceByCustomerAndName(customerName, datasourceName)
+                val datasource = DataSource.findDataSourceByCustomerAndName(customerName, datasourceName)
                     ?: return@transaction HttpStatusCode.NotFound to null
                 return@transaction HttpStatusCode.OK to GetDatasourceResponse(
                     name = datasource.name,

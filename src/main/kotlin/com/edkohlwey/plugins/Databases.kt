@@ -14,6 +14,7 @@ fun configureDatabases(): Database {
     transaction(database) {
         SchemaUtils.create(Customers)
         SchemaUtils.create(DataSources)
+        SchemaUtils.create(Rules)
     }
     return database
 }

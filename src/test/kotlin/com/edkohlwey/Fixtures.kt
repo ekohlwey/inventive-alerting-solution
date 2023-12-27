@@ -21,6 +21,88 @@ const val DEFAULT_DATASOURCE_NAME = "test-datasource"
 const val DEFAULT_DATASOURCE_URL = "http://test-url"
 const val DEFAULT_DATASOURCE_USERNAME = "test-username"
 const val DEFAULT_DATASOURCE_PASSWORD = "test-password"
+const val DEFAULT_RULE_NAME = "test-rule"
+const val DEFAULT_RULE_DESCRIPTION = "test-description"
+const val DEFAULT_RULE_DATASOURCE_CUSTOMER_NAME = "test-customer-2"
+val DEFAULT_RULE_FILTERS = mapOf("filter1" to "value1")
+val DEFAULT_RULE_PROPERTIES = listOf("property1")
+val DEFAULT_RULE_KEYS = listOf("key1")
+const val DEFAULT_RULE_DATASOURCE = DEFAULT_DATASOURCE_NAME
+const val DEFAULT_RULE_TRIGGER_ON_NEW = true
+const val DEFAULT_RULE_TRIGGER_ON_CHANGED = false
+const val DEFAULT_RULE_TRIGGER_ON_REMOVED = false
+
+suspend fun HttpClient.createTestRule(
+    customerName: String = DEFAULT_CUSTOMER_NAME,
+    ruleName: String = DEFAULT_RULE_NAME,
+    ruleDescription: String = DEFAULT_RULE_DESCRIPTION,
+    filters: Map<String, String> = DEFAULT_RULE_FILTERS,
+    properties: List<String> = DEFAULT_RULE_PROPERTIES,
+    keys: List<String> = DEFAULT_RULE_KEYS,
+    datasource: String = DEFAULT_RULE_DATASOURCE,
+    triggerOnNew: Boolean = DEFAULT_RULE_TRIGGER_ON_NEW,
+    triggerOnChanged: Boolean = DEFAULT_RULE_TRIGGER_ON_CHANGED,
+    triggerOnRemoved: Boolean = DEFAULT_RULE_TRIGGER_ON_REMOVED,
+    expectedStatus: HttpStatusCode = HttpStatusCode.Created,
+    datasourceCustomer: String = DEFAULT_RULE_DATASOURCE_CUSTOMER_NAME,
+
+    ) {
+    this.post("/customers/${customerName}/rules") {
+        contentType(ContentType.Application.Json)
+        setBody(
+            CreateRuleRequest(
+                name = ruleName,
+                description = ruleDescription,
+                filters = filters,
+                properties = properties,
+                keys = keys,
+                owner = customerName,
+                datasource = datasource,
+                triggerOnNew = triggerOnNew,
+                triggerOnChanged = triggerOnChanged,
+                triggerOnRemoved = triggerOnRemoved,
+                datasourceCustomer = datasourceCustomer
+            )
+        )
+    }.apply {
+        assertEquals(expectedStatus, status)
+        assertEquals("", bodyAsText())
+    }
+}
+
+suspend fun HttpClient.checkForTestRule(
+    customerName: String = DEFAULT_CUSTOMER_NAME,
+    ruleName: String = DEFAULT_RULE_NAME,
+    expectedDescription: String = DEFAULT_RULE_DESCRIPTION,
+    expectedFilters: Map<String, String> = DEFAULT_RULE_FILTERS,
+    expectedProperties: List<String> = DEFAULT_RULE_PROPERTIES,
+    expectedKeys: List<String> = DEFAULT_RULE_KEYS,
+    expectedDatasource: String = DEFAULT_RULE_DATASOURCE,
+    expectedTriggerOnNew: Boolean = DEFAULT_RULE_TRIGGER_ON_NEW,
+    expectedTriggerOnChanged: Boolean = DEFAULT_RULE_TRIGGER_ON_CHANGED,
+    expectedTriggerOnRemoved: Boolean = DEFAULT_RULE_TRIGGER_ON_REMOVED,
+    expectedDataSourceCustomer: String = DEFAULT_RULE_DATASOURCE_CUSTOMER_NAME
+) {
+    this.get("/customers/${customerName}/rules/${ruleName}").apply {
+        assertEquals(HttpStatusCode.OK, status)
+        assertEquals(
+            GetRuleResponse(
+                name = ruleName,
+                description = expectedDescription,
+                filters = expectedFilters,
+                properties = expectedProperties,
+                keys = expectedKeys,
+                owner = customerName,
+                datasource = expectedDatasource,
+                triggerOnNew = expectedTriggerOnNew,
+                triggerOnChanged = expectedTriggerOnChanged,
+                triggerOnRemoved = expectedTriggerOnRemoved,
+                datasourceCustomer = expectedDataSourceCustomer,
+            ), body(typeInfo<GetRuleResponse>())
+        )
+    }
+}
+
 suspend fun HttpClient.createTestCustomer(
     customerName: String = DEFAULT_CUSTOMER_NAME,
     expectedStatus: HttpStatusCode = HttpStatusCode.Created
@@ -101,6 +183,7 @@ fun ApplicationTestBuilder.setupClient(): HttpClient {
 
 fun clearDatabases(database: Database) {
     transaction(database) {
+        Rules.deleteAll()
         DataSources.deleteAll()
         Customers.deleteAll()
     }
