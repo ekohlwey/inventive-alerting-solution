@@ -47,7 +47,10 @@ class DatasourceRoutesTest {
                 UpdateDatasourceRequest(
                     url = "test-url-2",
                     username = "test-username-2",
-                    password = "test-password-2"
+                    password = "test-password-2",
+                    model = "test-model-2",
+                    view = "test-view-2",
+                    type = "LOOKER"
                 )
             )
         }.apply {
@@ -57,7 +60,10 @@ class DatasourceRoutesTest {
 
         client.checkForTestDatasource(
             expectedUrl = "test-url-2",
-            expectedUsername = "test-username-2"
+            expectedUsername = "test-username-2",
+            expectedModel = "test-model-2",
+            expectedType = "LOOKER",
+            expectedView = "test-view-2"
         )
     }
 

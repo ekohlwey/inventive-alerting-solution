@@ -25,13 +25,13 @@ fun Application.configureTriggerRoutes(database: Database) {
                     description = request.description
                     this.owner = owner
                     this.rules = SizedCollection(rules.filterNotNull())
+                    this.schedule = request.schedule
                 }
                 if (request.emailTrigger != null) {
                     EmailTrigger.new {
                         this.trigger = trigger
                         email = request.emailTrigger.email
                         prompt = request.emailTrigger.prompt
-                        schedule = request.emailTrigger.schedule
                     }
                 }
                 return@transaction HttpStatusCode.Created
@@ -63,14 +63,14 @@ data class CreateTriggerRequest(
     val name: String,
     val description: String,
     val rules: List<String>,
+    val schedule: String,
     val emailTrigger: CreateEmailTriggerRequest?
 )
 
 @Serializable
 data class CreateEmailTriggerRequest(
     val email: String,
-    val prompt: String,
-    val schedule: String
+    val prompt: String
 )
 
 @Serializable
@@ -78,14 +78,14 @@ data class GetTriggerResponse(
     val name: String,
     val description: String,
     val rules: List<String>,
+    val schedule: String,
     val emailTrigger: GetEmailTriggerResponse?
 )
 
 @Serializable
 data class GetEmailTriggerResponse(
     val email: String,
-    val prompt: String,
-    val schedule: String
+    val prompt: String
 )
 
 fun Trigger.toGetTriggerResponse(): GetTriggerResponse {
@@ -94,11 +94,11 @@ fun Trigger.toGetTriggerResponse(): GetTriggerResponse {
         name = this.name,
         description = this.description,
         rules = this.rules.map { it.name },
+        schedule = this.schedule,
         emailTrigger = emailTrig?.let {
             GetEmailTriggerResponse(
                 email = it.email,
                 prompt = it.prompt,
-                schedule = it.schedule
             )
         }
     )

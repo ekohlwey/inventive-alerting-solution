@@ -1,8 +1,6 @@
 package com.edkohlwey
 
-import com.edkohlwey.plugins.configureCustomerRoutes
-import com.edkohlwey.plugins.configureDatabases
-import com.edkohlwey.plugins.configureSerialization
+import com.edkohlwey.plugins.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -13,8 +11,12 @@ fun main() {
 }
 
 fun Application.module() {
+    val credentials = loadDefaultCredentials()
     configureSerialization()
     val database = configureDatabases()
     configureCustomerRoutes(database)
-    
+    configureDatasourceRoutes(database)
+    configureRuleRoutes(database)
+    configureTriggerRoutes(database)
+    jobSchedulerPlugin(database, credentials)
 }
