@@ -24,6 +24,9 @@ fun Application.configureDatasourceRoutes(database: Database) {
                     username = request.username
                     password = request.password
                     owner = customer
+                    model = request.model
+                    view = request.view
+                    type = DataSourceType.valueOf(request.type).ordinal
                 }
                 return@transaction HttpStatusCode.Created
             }
@@ -41,6 +44,9 @@ fun Application.configureDatasourceRoutes(database: Database) {
                     url = request.url
                     username = request.username
                     password = request.password
+                    model = request.model
+                    view = request.view
+                    type = DataSourceType.valueOf(request.type).ordinal
                 }
                 return@transaction HttpStatusCode.OK
             }
@@ -57,7 +63,10 @@ fun Application.configureDatasourceRoutes(database: Database) {
                 return@transaction HttpStatusCode.OK to GetDatasourceResponse(
                     name = datasource.name,
                     url = datasource.url,
-                    username = datasource.username
+                    username = datasource.username,
+                    model = datasource.model,
+                    view = datasource.view,
+                    type = DataSourceType.entries[datasource.type].name
                 )
             }
             if (value == null) {
@@ -74,19 +83,28 @@ data class CreateDatasourceRequest(
     val name: String,
     val url: String,
     val username: String,
-    val password: String
+    val password: String,
+    val model: String,
+    val view: String,
+    val type: String
 )
 
 @Serializable
 data class GetDatasourceResponse(
     val name: String,
     val url: String,
-    val username: String
+    val username: String,
+    val model: String,
+    val view: String,
+    val type: String
 )
 
 @Serializable
 data class UpdateDatasourceRequest(
     val url: String,
     val username: String,
-    val password: String
+    val password: String,
+    val model: String,
+    val view: String,
+    val type: String
 )

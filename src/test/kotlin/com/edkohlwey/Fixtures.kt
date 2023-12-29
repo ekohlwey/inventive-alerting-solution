@@ -36,6 +36,9 @@ const val DEFAULT_TRIGGER_EMAIL = "test-email"
 const val DEFAULT_TRIGGER_DESCRIPTION = "test-description"
 const val DEFAULT_EMAIL_PROMPT = "test-prompt"
 const val DEFAULT_EMAIL_SCHEDULE = "0 13 * * *"
+const val DEFAULT_MODEL_NAME = "test-model"
+const val DEFAULT_VIEW_NAME = "test-view"
+const val DEFAULT_DATASOURCE_TYPE = "LOOKER"
 
 suspend fun HttpClient.createTestRule(
     customerName: String = DEFAULT_CUSTOMER_NAME,
@@ -49,9 +52,8 @@ suspend fun HttpClient.createTestRule(
     triggerOnChanged: Boolean = DEFAULT_RULE_TRIGGER_ON_CHANGED,
     triggerOnRemoved: Boolean = DEFAULT_RULE_TRIGGER_ON_REMOVED,
     expectedStatus: HttpStatusCode = HttpStatusCode.Created,
-    datasourceCustomer: String = DEFAULT_RULE_DATASOURCE_CUSTOMER_NAME,
-
-    ) {
+    datasourceCustomer: String = DEFAULT_RULE_DATASOURCE_CUSTOMER_NAME
+) {
     this.post("/customers/${customerName}/rules") {
         contentType(ContentType.Application.Json)
         setBody(
@@ -127,7 +129,10 @@ suspend fun HttpClient.createTestDatasource(
     datasourceUrl: String = DEFAULT_DATASOURCE_URL,
     datasourceUsername: String = DEFAULT_DATASOURCE_USERNAME,
     datasourcePassword: String = DEFAULT_DATASOURCE_PASSWORD,
-    expectedStatus: HttpStatusCode = HttpStatusCode.Created
+    model: String = DEFAULT_MODEL_NAME,
+    view: String = DEFAULT_VIEW_NAME,
+    type: String = DEFAULT_DATASOURCE_TYPE,
+    expectedStatus: HttpStatusCode = HttpStatusCode.Created,
 ) {
     this.post("/customers/${customerName}/datasources") {
         contentType(ContentType.Application.Json)
@@ -136,7 +141,10 @@ suspend fun HttpClient.createTestDatasource(
                 name = datasourceName,
                 url = datasourceUrl,
                 username = datasourceUsername,
-                password = datasourcePassword
+                password = datasourcePassword,
+                model = model,
+                view = view,
+                type = type
             )
         )
     }.apply {
@@ -149,7 +157,10 @@ suspend fun HttpClient.checkForTestDatasource(
     customerName: String = DEFAULT_CUSTOMER_NAME,
     datasourceName: String = DEFAULT_DATASOURCE_NAME,
     expectedUrl: String = DEFAULT_DATASOURCE_URL,
-    expectedUsername: String = DEFAULT_DATASOURCE_USERNAME
+    expectedUsername: String = DEFAULT_DATASOURCE_USERNAME,
+    expectedType: String = DEFAULT_DATASOURCE_TYPE,
+    expectedView: String = DEFAULT_VIEW_NAME,
+    expectedModel: String = DEFAULT_MODEL_NAME,
 ) {
     this.get("/customers/${customerName}/datasources/${datasourceName}").apply {
         assertEquals(HttpStatusCode.OK, status)
@@ -157,7 +168,10 @@ suspend fun HttpClient.checkForTestDatasource(
             GetDatasourceResponse(
                 name = datasourceName,
                 url = expectedUrl,
-                username = expectedUsername
+                username = expectedUsername,
+                type = expectedType,
+                view = expectedView,
+                model = expectedModel
             ), body(typeInfo<GetDatasourceResponse>())
         )
     }
@@ -194,10 +208,10 @@ suspend fun HttpClient.createTestEmailTrigger(
                 name = triggerName,
                 description = description,
                 rules = rules,
+                schedule = schedule,
                 emailTrigger = CreateEmailTriggerRequest(
                     email = triggerEmail,
                     prompt = prompt,
-                    schedule = schedule
                 )
             )
         )
@@ -224,10 +238,10 @@ suspend fun HttpClient.checkForTestTrigger(
                     name = triggerName,
                     description = description,
                     rules = rules,
+                    schedule = schedule,
                     emailTrigger = GetEmailTriggerResponse(
                         email = triggerEmail,
                         prompt = prompt,
-                        schedule = schedule
                     )
                 ), body(typeInfo<GetTriggerResponse>())
             )
@@ -248,6 +262,7 @@ fun ApplicationTestBuilder.setupClient(): HttpClient {
 
 fun clearDatabases(database: Database) {
     transaction(database) {
+        RuleStates.deleteAll()
         EmailTriggers.deleteAll()
         TriggerRules.deleteAll()
         Triggers.deleteAll()

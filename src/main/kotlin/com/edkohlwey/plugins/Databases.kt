@@ -19,6 +19,7 @@ fun configureDatabases(): Database {
         SchemaUtils.create(Triggers)
         SchemaUtils.create(TriggerRules)
         SchemaUtils.create(EmailTriggers)
+        SchemaUtils.create(RuleStates)
     }
     return database
 }

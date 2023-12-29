@@ -12,6 +12,7 @@ object Triggers : IntIdTable() {
     val name = varchar("name", length = 128).uniqueIndex()
     val description = varchar("description", length = 512)
     val owner = reference("owner", Customers)
+    val schedule = text("schedule")
 }
 
 object TriggerRules : IntIdTable() {
@@ -20,19 +21,17 @@ object TriggerRules : IntIdTable() {
 }
 
 object EmailTriggers : IntIdTable() {
-    val trigger = optReference("trigger", Triggers, onDelete = ReferenceOption.CASCADE).uniqueIndex()
+    val trigger = reference("trigger", Triggers, onDelete = ReferenceOption.CASCADE).uniqueIndex()
     val email = varchar("email", length = 128)
     val prompt = text("prompt")
-    val schedule = text("schedule")
 }
 
 class EmailTrigger(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<EmailTrigger>(EmailTriggers)
 
-    var trigger by Trigger optionalReferencedOn EmailTriggers.trigger
+    var trigger by Trigger referencedOn EmailTriggers.trigger
     var email by EmailTriggers.email
     var prompt by EmailTriggers.prompt
-    var schedule by EmailTriggers.schedule
 }
 
 class Trigger(id: EntityID<Int>) : IntEntity(id) {
@@ -50,5 +49,6 @@ class Trigger(id: EntityID<Int>) : IntEntity(id) {
     var description by Triggers.description
     var rules by Rule via TriggerRules
     var owner by Customer referencedOn Triggers.owner
+    var schedule by Triggers.schedule
     val emailTrigger: EmailTrigger? by EmailTrigger optionalBackReferencedOn EmailTriggers.trigger
 }
