@@ -11,7 +11,12 @@ fun main() {
 }
 
 fun Application.module() {
+    val credentials = loadDefaultCredentials()
     configureSerialization()
-    configureDatabases()
-    configureRouting()
+    val database = configureDatabases()
+    configureCustomerRoutes(database)
+    configureDatasourceRoutes(database)
+    configureRuleRoutes(database)
+    configureTriggerRoutes(database)
+    jobSchedulerPlugin(database, credentials)
 }
