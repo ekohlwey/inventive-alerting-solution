@@ -1,5 +1,6 @@
 package com.edkohlwey
 
+import com.edkohlwey.plugins.configureCustomerRoutes
 import com.edkohlwey.plugins.configureDatabases
 import com.edkohlwey.plugins.configureSerialization
 import io.ktor.server.application.*
@@ -13,5 +14,7 @@ fun main() {
 
 fun Application.module() {
     configureSerialization()
-    configureDatabases()
+    val database = configureDatabases()
+    configureCustomerRoutes(database)
+    
 }
