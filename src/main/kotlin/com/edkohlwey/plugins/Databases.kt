@@ -2,10 +2,13 @@ package com.edkohlwey.plugins
 
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.jetbrains.exposed.sql.*
+import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabases() {
     val database = Database.connect(
@@ -14,36 +17,42 @@ fun Application.configureDatabases() {
         driver = "org.h2.Driver",
         password = ""
     )
-    val userService = UserService(database)
+    transaction(database) {
+        SchemaUtils.create(Customers)
+    }
     routing {
-        // Create user
-        post("/users") {
-            val user = call.receive<ExposedUser>()
-            val id = userService.create(user)
-            call.respond(HttpStatusCode.Created, id)
+        // Create customer
+        post<CreateCustomerRequest>("/customers") { request ->
+            transaction {
+                Customer.new { name = request.name }
+            }
+            call.respond(HttpStatusCode.Created)
         }
-        // Read user
-        get("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = userService.read(id)
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user)
+        // Read customer
+        get("/customers/{name}") {
+            val name = call.parameters["name"] ?: throw IllegalArgumentException("Must specify name")
+            val customer = transaction {
+                Customer.find(Customers.name eq name).firstOrNull()
+            }
+            if (customer != null) {
+                call.respond(HttpStatusCode.OK, GetCustomerResponse(name = customer.name))
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }
         }
-        // Update user
-        put("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = call.receive<ExposedUser>()
-            userService.update(id, user)
-            call.respond(HttpStatusCode.OK)
-        }
-        // Delete user
-        delete("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            userService.delete(id)
+        // Delete customer
+        delete("/customers/{name}") {
+            val name = call.parameters["name"] ?: throw IllegalArgumentException("Invalid name")
+            transaction {
+                Customer.find(Customers.name eq name).firstOrNull()?.delete()
+            }
             call.respond(HttpStatusCode.OK)
         }
     }
 }
+
+@Serializable
+data class GetCustomerResponse(val name: String)
+
+@Serializable
+data class CreateCustomerRequest(val name: String)
