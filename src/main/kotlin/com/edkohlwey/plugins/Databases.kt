@@ -1,49 +1,25 @@
 package com.edkohlwey.plugins
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 
-fun Application.configureDatabases() {
+fun configureDatabases(): Database {
     val database = Database.connect(
         url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
         user = "root",
         driver = "org.h2.Driver",
         password = ""
     )
-    val userService = UserService(database)
-    routing {
-        // Create user
-        post("/users") {
-            val user = call.receive<ExposedUser>()
-            val id = userService.create(user)
-            call.respond(HttpStatusCode.Created, id)
-        }
-        // Read user
-        get("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = userService.read(id)
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-        // Update user
-        put("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = call.receive<ExposedUser>()
-            userService.update(id, user)
-            call.respond(HttpStatusCode.OK)
-        }
-        // Delete user
-        delete("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            userService.delete(id)
-            call.respond(HttpStatusCode.OK)
-        }
+    transaction(database) {
+        SchemaUtils.create(Customers)
+        SchemaUtils.create(DataSources)
+        SchemaUtils.create(CustomerDatasources)
+        SchemaUtils.create(Rules)
+        SchemaUtils.create(Triggers)
+        SchemaUtils.create(TriggerRules)
+        SchemaUtils.create(EmailTriggers)
+        SchemaUtils.create(RuleStates)
     }
+    return database
 }
